@@ -74,12 +74,23 @@ namespace ApiPointOfSales.Services
                                 }
                                 else
                                 {
+                                    decimal priceNow = 0;
+
+                                    //check harga
+                                    if (salesOrder.OrderDate > price.PriceValidateFrom && salesOrder.OrderDate < price.PriceValidateTo)
+                                    {
+                                        priceNow = price.Price1 ?? 0;
+                                    }
+                                    else
+                                    {
+                                        priceNow = 0;
+                                    }
                                     var salesOrderDetail = new SalesOrderDetail
                                     {
                                         SalesOrderNo = salesOrder.SalesOrderNo,
                                         ProductCode = orderDetail.ProductCode,
                                         Qty = orderDetail.Qty,
-                                        Price = price.Price1 ?? 0
+                                        Price = priceNow
                                     };
                                     isError = false;
                                     await _salesOrderDetailRepository.Create(conn ,salesOrderDetail, trans);
@@ -235,12 +246,22 @@ namespace ApiPointOfSales.Services
                                 }
                                 else
                                 {
+                                    decimal priceNow = 0;
+
+                                    if (salesOrder.OrderDate > price.PriceValidateFrom && salesOrder.OrderDate < price.PriceValidateTo)
+                                    {
+                                        priceNow = price.Price1 ?? 0;
+                                    }
+                                    else
+                                    {
+                                        priceNow = 0;
+                                    }
                                     var salesOrderDetail = new SalesOrderDetail
                                     {
                                         SalesOrderNo = salesOrder.SalesOrderNo,
                                         ProductCode = orderDetail.ProductCode,
                                         Qty = orderDetail.Qty,
-                                        Price = price.Price1 ?? 0
+                                        Price = priceNow
                                     };
                                     isError = false;
                                     await _salesOrderDetailRepository.Update(conn, salesOrderDetail, trans);
