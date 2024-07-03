@@ -40,6 +40,11 @@ namespace ApiPointOfSales.Controllers
             Object output = _servicesOrder.DeleteSalesOrder(salesOrderCode);
             return ServicesOrder.isError ? BadRequest(output) : Ok(output);
         }
-
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateOrder(GetOrUpdateOrder order)
+        {
+            Object output = await _servicesOrder.UpdateSalesOrder(order);
+            return ServicesOrder.isError ? BadRequest(output) : Ok(output);
+        }
     }
 }

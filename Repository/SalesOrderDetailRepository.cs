@@ -75,22 +75,17 @@ namespace ApiPointOfSales.Repository
             }
         }
 
-        public void Update(SalesOrderDetail model)
+        public async Task Update(SqlConnection connection, SalesOrderDetail model, SqlTransaction trans)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                connection.Open();
+            SqlCommand cmd = new SqlCommand("UpdateSalesOrderDetail", connection, trans);
+            cmd.CommandType = CommandType.StoredProcedure;
 
-                SqlCommand cmd = new SqlCommand("UpdateSalesOrderDetail", connection);
-                cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@SalesOrderNo", model.SalesOrderNo);
+            cmd.Parameters.AddWithValue("@ProductCode", model.ProductCode);
+            cmd.Parameters.AddWithValue("@Qty", model.Qty);
+            cmd.Parameters.AddWithValue("@Price", model.Price);
 
-                cmd.Parameters.AddWithValue("@SalesOrderNo", model.SalesOrderNo);
-                cmd.Parameters.AddWithValue("@ProductCode", model.ProductCode);
-                cmd.Parameters.AddWithValue("@Qty", model.Qty);
-                cmd.Parameters.AddWithValue("@Price", model.Price);
-
-                cmd.ExecuteNonQuery();
-            }
+            await cmd.ExecuteNonQueryAsync();
         }
     }
 }

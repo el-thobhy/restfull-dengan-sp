@@ -6,7 +6,7 @@ namespace ApiPointOfSales.Repository
     {
         Task Create(SqlConnection connection, T model, SqlTransaction trans);
         T ReadById(string id);
-        void Update(T model);
+        Task Update(SqlConnection connection, T model, SqlTransaction trans);
         bool Delete(string id);
     }
 }

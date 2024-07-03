@@ -108,7 +108,7 @@ namespace ApiPointOfSales.Services
         {
             try
             {
-                ResponseGetOrUpdateOrder result = new ResponseGetOrUpdateOrder();
+                GetOrUpdateOrder result = new GetOrUpdateOrder();
                 SalesOrder getSales = _salesOrderRepository.ReadById(salesOrderCode);
                 if (getSales.SalesOrderNo.IsNullOrEmpty())
                 {
@@ -145,7 +145,7 @@ namespace ApiPointOfSales.Services
         {
             try
             {
-                ResponseGetOrUpdateOrder result = new ResponseGetOrUpdateOrder();
+                GetOrUpdateOrder result = new GetOrUpdateOrder();
                 bool del = _salesOrderRepository.Delete(salesOrderCode);
                 bool detailDel = _salesOrderDetailRepository.Delete(salesOrderCode);
                 if (!del && !detailDel)
@@ -159,7 +159,7 @@ namespace ApiPointOfSales.Services
                 else
                 {
                     ResponseOrder response = new ResponseOrder();
-                    response.Status = "failed";
+                    response.Status = "success";
                     response.Message = $"Data has been delete successfully";
                     isError = false;
                     return response;
@@ -170,6 +170,99 @@ namespace ApiPointOfSales.Services
                 isError = true;
                 throw;
             }
+        }
+
+        public async Task<Object> UpdateSalesOrder(GetOrUpdateOrder request)
+        {
+            ResponseSuccessCreateOrder response = new ResponseSuccessCreateOrder();
+            using (var conn = new SqlConnection(_connString))
+            {
+                await conn.OpenAsync();
+                using (var trans = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        Customer? customer = _dbContext.Customers
+                            .Where(o => o.CustId == request.CustId)
+                            .FirstOrDefault();
+                        if (customer == null)
+                        {
+                            ResponseOrder responseError = new ResponseOrder();
+                            responseError.Status = "failed";
+                            responseError.Message = $"Customer dengan code {request.CustId} tidak ditemukan";
+                            isError = true;
+                            return responseError;
+                        }
+
+                        SalesOrder? order = _dbContext.SalesOrders
+                            .Where(o => o.SalesOrderNo == request.SalesOrderNo)
+                            .FirstOrDefault();
+                        if (order == null)
+                        {
+                            ResponseOrder responseError = new ResponseOrder();
+                            responseError.Status = "failed";
+                            responseError.Message = $"No Order {request.SalesOrderNo} tidak ditemukan";
+                            isError = true;
+                            return responseError;
+                        }
+                        else
+                        {
+                            var salesOrder = new SalesOrder
+                            {
+                                OrderDate = order.OrderDate,
+                                SalesOrderNo = request.SalesOrderNo,
+                                CustCode = request.CustId
+                            };
+
+                            foreach (var orderDetail in request.OrderDetail)
+                            {
+                                Product? detail = _dbContext.Products
+                                    .Where(o => o.ProductCode == orderDetail.ProductCode)
+                                    .FirstOrDefault();
+
+                                Price? price = _dbContext.Prices
+                                    .Where(o => o.ProductCode == orderDetail.ProductCode)
+                                    .FirstOrDefault();
+
+                                if (detail == null)
+                                {
+                                    ResponseOrder responseError = new ResponseOrder();
+                                    responseError.Status = "failed";
+                                    responseError.Message = $"Product dengan code {orderDetail.ProductCode} tidak ditemukan";
+                                    isError = true;
+
+                                    return responseError;
+                                }
+                                else
+                                {
+                                    var salesOrderDetail = new SalesOrderDetail
+                                    {
+                                        SalesOrderNo = salesOrder.SalesOrderNo,
+                                        ProductCode = orderDetail.ProductCode,
+                                        Qty = orderDetail.Qty,
+                                        Price = price.Price1 ?? 0
+                                    };
+                                    isError = false;
+                                    await _salesOrderDetailRepository.Update(conn, salesOrderDetail, trans);
+                                    response.Status = "success";
+                                    response.SalesOrderNo = salesOrder.SalesOrderNo;
+                                    response.Message = "Data has been updated successfully";
+                                }
+                            }
+                            await _salesOrderRepository.Update(conn, salesOrder, trans);
+                            trans.Commit();
+                            return response;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        trans.Rollback();
+                        throw new Exception(e.Message);
+                    }
+                }
+
+            }
+
         }
 
         private string GenerateSalesOrderNumber()

@@ -12,7 +12,7 @@
         public string Status { get; set; } = default!;
         public string Message { get; set; } = default!;
     }
-    public class ResponseGetOrUpdateOrder: RequestSalesOrder
+    public class GetOrUpdateOrder: RequestSalesOrder
     {
         public string SalesOrderNo { get; set; } = default!;
     }
