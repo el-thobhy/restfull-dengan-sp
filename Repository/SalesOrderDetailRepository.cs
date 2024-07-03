@@ -29,7 +29,7 @@ namespace ApiPointOfSales.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public void Delete(string salesOrderNo, string productCode)
+        public bool Delete(string salesOrderNo)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -39,13 +39,13 @@ namespace ApiPointOfSales.Repository
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 cmd.Parameters.AddWithValue("@SalesOrderNo", salesOrderNo);
-                cmd.Parameters.AddWithValue("@ProductCode", productCode);
-
+                List<SalesOrderDetail> check = ReadById(salesOrderNo);
                 cmd.ExecuteNonQuery();
+                return check.Count != 0 ? true : false ;
             }
         }
 
-        public SalesOrderDetail ReadById(string salesOrderNo, string productCode)
+        public List<SalesOrderDetail> ReadById(string salesOrderNo)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -55,22 +55,23 @@ namespace ApiPointOfSales.Repository
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 cmd.Parameters.AddWithValue("@SalesOrderNo", salesOrderNo);
-                cmd.Parameters.AddWithValue("@ProductCode", productCode);
 
                 SqlDataReader reader = cmd.ExecuteReader();
+                List<SalesOrderDetail> result = new List<SalesOrderDetail>();
 
-                if (reader.Read())
+                while (reader.Read())
                 {
-                    SalesOrderDetail salesOrderDetail = new SalesOrderDetail();
-                    salesOrderDetail.SalesOrderNo = reader["SalesOrderNo"].ToString() ?? "";
-                    salesOrderDetail.ProductCode = reader["ProductCode"].ToString() ?? "";
-                    salesOrderDetail.Qty = Convert.ToInt32(reader["Qty"]);
-                    salesOrderDetail.Price = Convert.ToDecimal(reader["Price"]);
+                    SalesOrderDetail salesOrderDetail = new SalesOrderDetail
+                    {
+                        SalesOrderNo = reader["SalesOrderNo"].ToString() ?? "",
+                        ProductCode = reader["ProductCode"].ToString() ?? "",
+                        Qty = Convert.ToInt32(reader["Qty"]),
+                        Price = Convert.ToDecimal(reader["Price"])
+                    };
 
-                    return salesOrderDetail;
+                    result.Add(salesOrderDetail);
                 }
-
-                return new SalesOrderDetail();
+                return result;
             }
         }
 

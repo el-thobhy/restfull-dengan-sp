@@ -27,5 +27,19 @@ namespace ApiPointOfSales.Controllers
             Object output = await _servicesOrder.CreateSalesOrder(order);
             return ServicesOrder.isError ? BadRequest(output) : Ok(output);
         }
+        [HttpGet("view")]
+        public IActionResult ReadSalesOrder(string salesOrderCode)
+        {
+            Object output = _servicesOrder.ReadById(salesOrderCode);       
+            return ServicesOrder.isError ? BadRequest(output) : Ok(output);
+        }
+
+        [HttpDelete("delete")]
+        public IActionResult DeleteSalesOrder(string salesOrderCode)
+        {
+            Object output = _servicesOrder.DeleteSalesOrder(salesOrderCode);
+            return ServicesOrder.isError ? BadRequest(output) : Ok(output);
+        }
+
     }
 }

@@ -26,16 +26,17 @@ namespace ApiPointOfSales.Repository
                 
         }
 
-        public void Delete(string salesOrderNo)
+        public bool Delete(string salesOrderNo)
         {
             using(SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-
                 SqlCommand cmd = new SqlCommand("DeleteSalesOrder", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@SalesOrderNo", salesOrderNo);
+                SalesOrder result = ReadById(salesOrderNo);
                 cmd.ExecuteNonQuery();
+                return result != null ? true : false;
             }
         }
 
@@ -44,7 +45,7 @@ namespace ApiPointOfSales.Repository
             using(SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                SqlCommand cmd = new SqlCommand("ReadById", conn);
+                SqlCommand cmd = new SqlCommand("ReadSalesOrder", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 cmd.Parameters.AddWithValue("@SalesOrderNo", salesOrderNo);

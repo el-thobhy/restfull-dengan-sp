@@ -1,8 +1,10 @@
 ﻿using ApiPointOfSales.DataModel;
 using ApiPointOfSales.Repository;
 using ApiPointOfSales.ViewModel;
+using Azure.Core;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Transactions;
 
 namespace ApiPointOfSales.Services
@@ -38,7 +40,7 @@ namespace ApiPointOfSales.Services
                         {
                             ResponseOrder responseError = new ResponseOrder();
                             responseError.Status = "failed";
-                            responseError.ResponseMessage = $"Customer dengan code {request.CustId} tidak ditemukan";
+                            responseError.Message = $"Customer dengan code {request.CustId} tidak ditemukan";
                             isError = true;
                             return responseError;
                         }
@@ -65,7 +67,7 @@ namespace ApiPointOfSales.Services
                                 {
                                     ResponseOrder responseError = new ResponseOrder();
                                     responseError.Status = "failed";
-                                    responseError.ResponseMessage = $"Product dengan code {orderDetail.ProductCode} tidak ditemukan";
+                                    responseError.Message = $"Product dengan code {orderDetail.ProductCode} tidak ditemukan";
                                     isError = true;
 
                                     return responseError;
@@ -99,7 +101,75 @@ namespace ApiPointOfSales.Services
                 }
                 
             }
-            
+
+        }
+
+        public Object ReadById(string salesOrderCode)
+        {
+            try
+            {
+                ResponseGetOrUpdateOrder result = new ResponseGetOrUpdateOrder();
+                SalesOrder getSales = _salesOrderRepository.ReadById(salesOrderCode);
+                if (getSales.SalesOrderNo.IsNullOrEmpty())
+                {
+                    ResponseOrder responseError = new ResponseOrder();
+                    responseError.Status = "failed";
+                    responseError.Message = $"No Order {salesOrderCode} tidak ditemukan";
+                    isError = true;
+                    return responseError;
+                }
+                else
+                {
+                    result.SalesOrderNo = getSales.SalesOrderNo;
+                    result.CustId = getSales.CustCode;
+
+                    var detail = _salesOrderDetailRepository.ReadById(salesOrderCode)
+                        .Select(o=>new RequestSalesOrderDetail
+                        {
+                            ProductCode = o.ProductCode,
+                            Qty = o.Qty
+                        }).ToList();
+                    result.OrderDetail = detail;
+                    isError = false;
+                    return result;
+                }
+            }
+            catch (Exception)
+            {
+                isError = true;
+                throw;
+            }
+           
+        }
+        public Object DeleteSalesOrder(string salesOrderCode)
+        {
+            try
+            {
+                ResponseGetOrUpdateOrder result = new ResponseGetOrUpdateOrder();
+                bool del = _salesOrderRepository.Delete(salesOrderCode);
+                bool detailDel = _salesOrderDetailRepository.Delete(salesOrderCode);
+                if (!del && !detailDel)
+                {
+                    ResponseOrder responseError = new ResponseOrder();
+                    responseError.Status = "failed";
+                    responseError.Message = $"No Order {salesOrderCode} tidak ditemukan";
+                    isError = true;
+                    return responseError;
+                }
+                else
+                {
+                    ResponseOrder response = new ResponseOrder();
+                    response.Status = "failed";
+                    response.Message = $"Data has been delete successfully";
+                    isError = false;
+                    return response;
+                }
+            }
+            catch (Exception)
+            {
+                isError = true;
+                throw;
+            }
         }
 
         private string GenerateSalesOrderNumber()
@@ -130,5 +200,6 @@ namespace ApiPointOfSales.Services
             }
             return newCode;
         }
+
     }
 }
